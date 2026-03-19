@@ -56,10 +56,10 @@ function ForgotPasswordModal({ visible, onClose }) {
               </Text>
               <TextInput
                 style={[styles.input, fpError ? styles.inputError : null]}
-                placeholder="Enter your username"
+                placeholder="you@example.com"
                 placeholderTextColor={COLORS.textSecondary}
-                
-                
+                keyboardType="email-address"
+                autoCapitalize="none"
                 value={fpEmail}
                 onChangeText={(t) => { setFpEmail(t); setFpError(''); }}
                 returnKeyType="go"
@@ -94,6 +94,12 @@ function ForgotPasswordModal({ visible, onClose }) {
   );
 }
 
+// Demo credentials — replace with real auth (Supabase/Firebase) later
+const DEMO_USERS = [
+  { username: 'client',  password: 'client123',  role: 'client'  },
+  { username: 'artisan', password: 'artisan123', role: 'artisan' },
+];
+
 // ── Main Screen ───────────────────────────────────────────────────────────────
 export default function LoginScreen({ navigation }) {
   const [role, setRole]                 = useState('client');
@@ -111,11 +117,11 @@ export default function LoginScreen({ navigation }) {
 
   const validate = () => {
     const e = {};
-
+    if (!username.trim()) e.username = 'Username is required';
     if (!password.trim()) {
       e.password = 'Password is required';
-    } else if (password.length < 8) {
-      e.password = 'Password must be at least 8 characters';
+    } else if (password.length < 6) {
+      e.password = 'Password must be at least 6 characters';
     }
     setErrors(e);
     return Object.keys(e).length === 0;
@@ -123,18 +129,26 @@ export default function LoginScreen({ navigation }) {
 
   const handleLogin = () => {
     if (!validate()) return;
+    const trimmedUsername = username.trim();
+    const trimmedPassword = password;
     setLoading(true);
     setTimeout(() => {
+      const match = DEMO_USERS.find(
+        u => u.username === trimmedUsername && u.password === trimmedPassword
+      );
       setLoading(false);
-      const displayName = username.trim() || 'there';
-      const dest = role === 'artisan' ? 'ArtisanHome' : 'Home';
-      navigation.navigate(dest, { name: displayName });
+      if (!match) {
+        setErrors({ general: 'Incorrect username or password. Please try again.' });
+        return;
+      }
+      const dest = match.role === 'artisan' ? 'ArtisanHome' : 'Home';
+      navigation.reset({ index: 0, routes: [{ name: dest, params: { name: trimmedUsername } }] });
     }, 800);
   };
 
   const handleGoogleLogin = () => {
     const dest = role === 'artisan' ? 'ArtisanHome' : 'Home';
-    navigation.navigate(dest, { name: 'User' });
+    navigation.reset({ index: 0, routes: [{ name: dest, params: { name: 'User' } }] });
   };
 
   return (
@@ -163,7 +177,7 @@ export default function LoginScreen({ navigation }) {
             activeOpacity={0.85}
           >
             <Text style={[styles.toggleText, role === 'client' && styles.toggleTextActive]}>
-            Client
+              I'm a Client
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -172,7 +186,7 @@ export default function LoginScreen({ navigation }) {
             activeOpacity={0.85}
           >
             <Text style={[styles.toggleText, role === 'artisan' && styles.toggleTextActive]}>
-            Artisan
+              I'm an Artisan
             </Text>
           </TouchableOpacity>
         </View>
@@ -195,10 +209,9 @@ export default function LoginScreen({ navigation }) {
               style={[styles.input, errors.username && styles.inputError]}
               placeholder="Enter your username"
               placeholderTextColor={COLORS.textSecondary}
-              
-              
+              autoCapitalize="none"
               value={username}
-              onChangeText={(t) => { setUsername(t); setErrors(e => ({ ...e, username: '' })); }}
+              onChangeText={(t) => { setUsername(t); setErrors(e => ({ ...e, username: '', general: '' })); }}
               returnKeyType="next"
               blurOnSubmit={false}
             />
@@ -215,7 +228,7 @@ export default function LoginScreen({ navigation }) {
                 placeholderTextColor={COLORS.textSecondary}
                 secureTextEntry={!showPassword}
                 value={password}
-                onChangeText={(t) => { setPassword(t); setErrors(e => ({ ...e, password: '' })); }}
+                onChangeText={(t) => { setPassword(t); setErrors(e => ({ ...e, password: '', general: '' })); }}
                 returnKeyType="go"
                 onSubmitEditing={handleLogin}
                 onKeyPress={handleKeyPress(handleLogin)}
@@ -244,6 +257,13 @@ export default function LoginScreen({ navigation }) {
               <Text style={styles.forgotText}>Forgot password?</Text>
             </TouchableOpacity>
           </View>
+
+          {/* General error */}
+          {errors.general ? (
+            <View style={styles.generalError}>
+              <Text style={styles.generalErrorText}>{errors.general}</Text>
+            </View>
+          ) : null}
 
           {/* Sign In */}
           <TouchableOpacity
@@ -366,6 +386,13 @@ const styles = StyleSheet.create({
   },
   loginBtnDisabled: { opacity: 0.65 },
   loginBtnText: { color: '#FFFFFF', fontSize: 15, fontWeight: '700', letterSpacing: 0.5 },
+
+  generalError: {
+    backgroundColor: '#FEF2F2', borderRadius: 10,
+    padding: 12, marginBottom: 14,
+    borderWidth: 1, borderColor: '#FECACA',
+  },
+  generalErrorText: { fontSize: 13, color: COLORS.error, textAlign: 'center', fontWeight: '500' },
 
   divider: { flexDirection: 'row', alignItems: 'center', marginVertical: 18 },
   dividerLine: { flex: 1, height: 1, backgroundColor: COLORS.border },

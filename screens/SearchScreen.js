@@ -48,7 +48,7 @@ function Stars({ rating }) {
 }
 
 // ── List Card ─────────────────────────────────────────────────────────────────
-function ArtisanCard({ artisan, onPress }) {
+function ArtisanCard({ artisan, onPress, onBook }) {
   return (
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.88}>
       <View style={styles.avatarWrapper}>
@@ -64,7 +64,7 @@ function ArtisanCard({ artisan, onPress }) {
         </View>
         <Text style={styles.artisanLocation}>📍 {artisan.location}</Text>
       </View>
-      <TouchableOpacity style={styles.bookBtn} activeOpacity={0.85}>
+      <TouchableOpacity style={styles.bookBtn} onPress={onBook} activeOpacity={0.85}>
         <Text style={styles.bookBtnText}>Book</Text>
       </TouchableOpacity>
     </TouchableOpacity>
@@ -249,7 +249,7 @@ export default function SearchScreen({ navigation }) {
             </View>
           ) : (
             results.map((a) => (
-              <ArtisanCard key={a.id} artisan={a} onPress={() => {}} />
+              <ArtisanCard key={a.id} artisan={a} onPress={() => navigation.navigate("ArtisanProfile", { artisan: a })} onBook={() => navigation.navigate("ArtisanProfile", { artisan: a })} />
             ))
           )}
         </ScrollView>
@@ -293,7 +293,7 @@ export default function SearchScreen({ navigation }) {
             const a = results.find(x => x.id === selectedPin);
             return a ? (
               <View style={styles.mapCardWrapper}>
-                <ArtisanCard artisan={a} onPress={() => {}} />
+                <ArtisanCard artisan={a} onPress={() => navigation.navigate("ArtisanProfile", { artisan: a })} onBook={() => navigation.navigate("ArtisanProfile", { artisan: a })} />
               </View>
             ) : null;
           })()}

@@ -8,6 +8,8 @@ import HomeScreen         from './screens/HomeScreen';
 import ArtisanHomeScreen  from './screens/ArtisanHomeScreen';
 import SearchScreen       from './screens/SearchScreen';
 import MessagesScreen     from './screens/MessagesScreen';
+import ArtisanProfileScreen from './screens/ArtisanProfileScreen';
+import PostJobScreen from './screens/PostJobScreen';
 
 const Stack = createStackNavigator();
 
@@ -22,7 +24,9 @@ export default function App() {
         <Stack.Screen name="Home"         component={HomeScreen}        />
         <Stack.Screen name="ArtisanHome"  component={ArtisanHomeScreen} />
         <Stack.Screen name="Search"       component={SearchScreen}      />
-        <Stack.Screen name="Messages"     component={MessagesScreen}      />
+        <Stack.Screen name="Messages"     component={MessagesScreen}    />
+        <Stack.Screen name="ArtisanProfile" component={ArtisanProfileScreen} />
+        <Stack.Screen name="PostJob"      component={PostJobScreen}     />
       </Stack.Navigator>
     </NavigationContainer>
   );

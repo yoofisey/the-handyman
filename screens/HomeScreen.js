@@ -47,30 +47,6 @@ const STATS = [
   { value: '4.8★',   label: 'Avg Rating' },
 ];
 
-// ── Splash overlay (shown while loading) ──────────────────────────────────────
-function SplashOverlay({ visible }) {
-  const fadeAnim = useRef(new Animated.Value(1)).current;
-
-  useEffect(() => {
-    if (!visible) {
-      Animated.timing(fadeAnim, {
-        toValue: 0,
-        duration: 600,
-        useNativeDriver: Platform.OS !== 'web',
-      }).start();
-    }
-  }, [visible]);
-
-  return (
-    <Animated.View
-      pointerEvents={visible ? 'auto' : 'none'}
-      style={[styles.splashOverlay, { opacity: fadeAnim }]}
-    >
-      <Text style={styles.splashEmoji}>🛠️</Text>
-    </Animated.View>
-  );
-}
-
 // ── Stars ─────────────────────────────────────────────────────────────────────
 function Stars({ rating }) {
   return (
@@ -81,7 +57,7 @@ function Stars({ rating }) {
 }
 
 // ── Artisan Card ──────────────────────────────────────────────────────────────
-function ArtisanCard({ artisan }) {
+function ArtisanCard({ artisan, onBook }) {
   return (
     <View style={styles.card}>
       <View style={styles.avatarWrapper}>
@@ -103,7 +79,7 @@ function ArtisanCard({ artisan }) {
           <Text style={styles.reviewCount}>({artisan.reviews})</Text>
         </View>
       </View>
-      <TouchableOpacity style={styles.bookBtn} activeOpacity={0.85}>
+      <TouchableOpacity style={styles.bookBtn} onPress={onBook} activeOpacity={0.85}>
         <Text style={styles.bookBtnText}>Book</Text>
       </TouchableOpacity>
     </View>
@@ -127,6 +103,7 @@ function BottomNav({ active, setActive, navigation }) {
           onPress={() => {
             setActive(tab.key);
             if (tab.key === 'search') navigation.navigate('Search');
+            if (tab.key === 'post') navigation.navigate('PostJob');
           }}
           activeOpacity={0.7}
         >
@@ -144,14 +121,22 @@ function BottomNav({ active, setActive, navigation }) {
 // ── Screen ────────────────────────────────────────────────────────────────────
 export default function HomeScreen({ navigation, route }) {
   const userName = route?.params?.name || 'there';
-  const [activeTab, setActiveTab]       = useState('home');
+  const [activeTab, setActiveTab]           = useState('home');
   const [activeCategory, setActiveCategory] = useState('All');
-  const [loading, setLoading]           = useState(true);
 
-  // Simulate a short load then hide the splash overlay
+  // Splash overlay on first load
+  const fadeAnim  = useRef(new Animated.Value(1)).current;
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+  const [splashDone, setSplashDone] = useState(false);
+
   useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 1800);
-    return () => clearTimeout(timer);
+    Animated.sequence([
+      Animated.delay(1200),
+      Animated.parallel([
+        Animated.timing(fadeAnim, { toValue: 0, duration: 500, useNativeDriver: Platform.OS !== 'web' }),
+        Animated.timing(scaleAnim, { toValue: 1.08, duration: 500, useNativeDriver: Platform.OS !== 'web' }),
+      ]),
+    ]).start(() => setSplashDone(true));
   }, []);
 
   const getGreeting = () => {
@@ -169,6 +154,17 @@ export default function HomeScreen({ navigation, route }) {
 
   return (
     <View style={styles.outerContainer}>
+      {/* Splash overlay */}
+      {!splashDone && (
+        <Animated.View style={[styles.splashOverlay, { opacity: fadeAnim, transform: [{ scale: scaleAnim }] }]}
+          pointerEvents="none">
+          <View style={styles.splashLogoWrapper}>
+            <Text style={styles.splashEmoji}>🛠️</Text>
+          </View>
+          <Text style={styles.splashAppName}>THE HANDYMAN</Text>
+          <Text style={styles.splashTagline}>Every trade. One platform.</Text>
+        </Animated.View>
+      )}
       <ScrollView
         contentContainerStyle={styles.container}
         showsVerticalScrollIndicator={false}
@@ -180,7 +176,7 @@ export default function HomeScreen({ navigation, route }) {
             <Text style={styles.userName}>{userName}</Text>
           </View>
           <TouchableOpacity style={styles.msgBtn} onPress={() => navigation.navigate('Messages')} activeOpacity={0.8}>
-            <Text style={styles.msgIcon}>⟶</Text>
+            <Text style={styles.msgIcon}>✉</Text>
           </TouchableOpacity>
         </View>
 
@@ -189,7 +185,7 @@ export default function HomeScreen({ navigation, route }) {
           <View style={styles.heroText}>
             <Text style={styles.heroTitle}>Find a trusted{'\n'}pro near you</Text>
             <Text style={styles.heroSub}>Browse 1,200+ vetted artisans{'\n'}ready to take your job today.</Text>
-            <TouchableOpacity style={styles.heroBtn} activeOpacity={0.85}>
+            <TouchableOpacity style={styles.heroBtn} onPress={() => navigation.navigate('Search')} activeOpacity={0.85}>
               <Text style={styles.heroBtnText}>Browse Now →</Text>
             </TouchableOpacity>
           </View>
@@ -237,7 +233,11 @@ export default function HomeScreen({ navigation, route }) {
         </View>
 
         {filtered.map((artisan) => (
-          <ArtisanCard key={artisan.id} artisan={artisan} />
+          <ArtisanCard
+            key={artisan.id}
+            artisan={artisan}
+            onBook={() => navigation.navigate('ArtisanProfile', { artisan })}
+          />
         ))}
 
       </ScrollView>
@@ -245,7 +245,6 @@ export default function HomeScreen({ navigation, route }) {
       <BottomNav active={activeTab} setActive={setActiveTab} navigation={navigation} />
 
       {/* Splash overlay fades out once loaded */}
-      <SplashOverlay visible={loading} />
     </View>
   );
 }
@@ -259,15 +258,6 @@ const styles = StyleSheet.create({
       : { flex: 1 }),
   },
   container: { paddingHorizontal: 18, paddingTop: 60, paddingBottom: 100 },
-
-  // Splash overlay
-  splashOverlay: {
-    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center', justifyContent: 'center',
-    zIndex: 99,
-  },
-  splashEmoji: { fontSize: 72 },
 
   // Header
   header: {
@@ -388,4 +378,20 @@ const styles = StyleSheet.create({
   navLabel: { fontSize: 10, fontWeight: '600', color: COLORS.textSecondary },
   navLabelActive: { color: COLORS.primary },
   navDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: COLORS.primary, marginTop: 2 },
+
+  // Splash overlay
+  splashOverlay: {
+    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center', justifyContent: 'center',
+    zIndex: 99, gap: 20,
+  },
+  splashLogoWrapper: {
+    width: 120, height: 120, borderRadius: 34,
+    backgroundColor: '#fffafa', borderWidth: 1, borderColor: '#3A3A3C',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  splashEmoji: { fontSize: 56 },
+  splashAppName: { fontSize: 20, fontWeight: '800', color: COLORS.primary, letterSpacing: 7 },
+  splashTagline: { fontSize: 13, color: '#8A8A8E', letterSpacing: 0.4 },
 });

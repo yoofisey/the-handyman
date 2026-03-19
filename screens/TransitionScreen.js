@@ -8,22 +8,23 @@ import {
 } from 'react-native';
 
 const COLORS = {
-  bg: '#fffafa',
+  bg: '#1C1C1E',
   accent: '#D47C2F',
-  accentLight: '#FFFFF0',
+  accentLight: '#3A2A1A',
   border: '#3A3A3C',
-  textPrimary: '#FFFFFF',
   textSecondary: '#8A8A8E',
 };
 
-export default function SplashScreen({ navigation }) {
+export default function TransitionScreen({ navigation, route }) {
+  const dest      = route?.params?.dest || 'Home';
+  const destParams = route?.params?.destParams || {};
+
   const fadeAnim  = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.82)).current;
   const textFade  = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     Animated.sequence([
-      // 1. Logo fades + scales in
       Animated.parallel([
         Animated.timing(fadeAnim, {
           toValue: 1,
@@ -37,40 +38,37 @@ export default function SplashScreen({ navigation }) {
           useNativeDriver: Platform.OS !== 'web',
         }),
       ]),
-      // 2. Text fades in shortly after
       Animated.timing(textFade, {
         toValue: 1,
         duration: 500,
         useNativeDriver: Platform.OS !== 'web',
       }),
-      // 3. Hold
-      Animated.delay(1000),
-      // 4. Everything fades out
+      Animated.delay(800),
       Animated.parallel([
         Animated.timing(fadeAnim, {
           toValue: 0,
-          duration: 600,
+          duration: 500,
           useNativeDriver: Platform.OS !== 'web',
         }),
         Animated.timing(textFade, {
           toValue: 0,
-          duration: 600,
+          duration: 500,
           useNativeDriver: Platform.OS !== 'web',
         }),
       ]),
     ]).start(() => {
-      navigation.replace('Login');
+      navigation.reset({
+        index: 0,
+        routes: [{ name: dest, params: destParams }],
+      });
     });
   }, []);
 
   return (
     <View style={styles.container}>
-      {/* Logo */}
       <Animated.View style={[styles.logoWrapper, { opacity: fadeAnim, transform: [{ scale: scaleAnim }] }]}>
         <Text style={styles.logoEmoji}>🛠️</Text>
       </Animated.View>
-
-      {/* App name + tagline */}
       <Animated.View style={[styles.textWrapper, { opacity: textFade }]}>
         <Text style={styles.appName}>THE HANDYMAN</Text>
         <Text style={styles.tagline}>Every trade. One platform.</Text>
